@@ -1,0 +1,34 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "_Game/Lever.h"
+
+// Sets default values
+ALever::ALever()
+{
+ 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+}
+
+// Called when the game starts or when spawned
+void ALever::BeginPlay()
+{
+	Super::BeginPlay();
+	
+}
+
+// Called every frame
+void ALever::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+}
+
+void ALever::Interact_Implementation(ATheGauntletCharacter* interacter)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, "Being Interacted");
+
+	ITGOrderReceiver::Execute_DoOrder(linkedObject.GetObject(), this);
+}
+

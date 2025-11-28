@@ -85,6 +85,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoJumpEnd();
 
+	UFUNCTION(BlueprintCallable, Category="Interact")
+	virtual void Interact();
+
+	UFUNCTION(BlueprintCallable, Category = "Interact")
+	virtual void Punch();
+
+	UPROPERTY(EditAnywhere, Category = "Interact")
+	float interactionRange;
+
+	UPROPERTY(VisibleAnywhere, Category = "Interact")
+	bool hasKey;
+
 public:
 
 	/** Returns CameraBoom subobject **/

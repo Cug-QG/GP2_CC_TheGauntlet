@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "TheGauntlet.h"
+#include "Interactable.h"
 
 ATheGauntletCharacter::ATheGauntletCharacter()
 {
@@ -130,4 +131,47 @@ void ATheGauntletCharacter::DoJumpEnd()
 {
 	// signal the character to stop jumping
 	StopJumping();
+}
+
+void ATheGauntletCharacter::Interact()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, "Interacting");
+
+	FVector StartLocation;
+	FRotator ViewRotation;
+
+	// Ottiene la posizione e rotazione della camera/occhi del giocatore
+	GetController()->GetPlayerViewPoint(StartLocation, ViewRotation);
+
+	// Calcola il punto finale moltiplicando il vettore "avanti" per la distanza
+	FVector EndLocation = StartLocation + (ViewRotation.Vector() * interactionRange);
+
+	// 2. Setup parametri di collisione
+	FHitResult HitResult;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this); // Ignora il giocatore stesso nel trace
+
+	// 3. Esegui il Line Trace
+	// ECC_Visibility è il canale standard per oggetti visibili. 
+	// Puoi usarne uno custom se necessario.
+	bool bHit = GetWorld()->LineTraceSingleByChannel(
+		HitResult,
+		StartLocation,
+		EndLocation,
+		ECC_Visibility,
+		QueryParams
+	);
+
+	// DEBUG: Disegna una linea rossa (se non colpisce) o verde (se colpisce)
+	DrawDebugLine(GetWorld(), StartLocation, EndLocation, bHit ? FColor::Green : FColor::Red, false, 2.0f, 0, 2.0f);
+
+	if (bHit && HitResult.GetActor()->Implements<UInteractable>())
+	{
+		IInteractable::Execute_Interact(HitResult.GetActor(), this);
+	}
+}
+
+void ATheGauntletCharacter::Punch()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "Damaging");
 }
