@@ -4,16 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "LivingActor.generated.h"
+#include "FinishLine.generated.h"
 
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVictorySignature);
 UCLASS()
-class THEGAUNTLET_API ALivingActor : public AActor
+class THEGAUNTLET_API AFinishLine : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ALivingActor();
+	AFinishLine();
 
 protected:
 	// Called when the game starts or when spawned
@@ -23,4 +24,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
+	//
+	// UPROPERTY(BlueprintAssignable, Category = "Events")
+	// FOnVictorySignature OnVictoryEvent;
+	
 };

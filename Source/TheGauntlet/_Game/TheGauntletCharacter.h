@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "LivingActor.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "TheGauntletCharacter.generated.h"
@@ -90,6 +91,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Interact")
 	virtual void Punch();
+	
+	FHitResult TryInteract();
 
 	UPROPERTY(EditAnywhere, Category = "Interact")
 	float interactionRange;
@@ -99,6 +102,22 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Interact")
 	float damage;
+	
+	virtual void Landed(const FHitResult& Hit) override;
+	
+	UPROPERTY(EditAnywhere, Category = "Fall")
+	float minFallVelocity;
+	
+	UPROPERTY(EditAnywhere, Category = "Fall")
+	float fallDmgMultiplier;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UHealthComponent* HealthComp;
+	
+	UFUNCTION(BlueprintCallable)
+	void DoOnDeath();
+
+	float LastFrameZVelocity;
 
 public:
 

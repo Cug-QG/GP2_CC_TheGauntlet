@@ -1,6 +1,9 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "TheGauntletCharacter.h"
+
+#include <string>
+
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -12,7 +15,7 @@
 #include "InputActionValue.h"
 #include "TheGauntlet.h"
 #include "Interactable.h"
-#include "Damageable.h"
+#include "HealthComponent.h"
 
 ATheGauntletCharacter::ATheGauntletCharacter()
 {
@@ -50,6 +53,9 @@ ATheGauntletCharacter::ATheGauntletCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	
+	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
+	HealthComp->OnDeath.AddDynamic(this, &ATheGauntletCharacter::DoOnDeath);
 }
 
 void ATheGauntletCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -137,38 +143,17 @@ void ATheGauntletCharacter::DoJumpEnd()
 void ATheGauntletCharacter::Interact()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, "Interacting");
-
-	FVector StartLocation;
-	FRotator ViewRotation;
-
-	// Ottiene la posizione e rotazione della camera/occhi del giocatore
-	GetController()->GetPlayerViewPoint(StartLocation, ViewRotation);
-
-	// Calcola il punto finale moltiplicando il vettore "avanti" per la distanza
-	FVector EndLocation = StartLocation + (ViewRotation.Vector() * interactionRange);
-
-	// 2. Setup parametri di collisione
-	FHitResult HitResult;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this); // Ignora il giocatore stesso nel trace
-
-	// 3. Esegui il Line Trace
-	// ECC_Visibility è il canale standard per oggetti visibili. 
-	// Puoi usarne uno custom se necessario.
-	bool bHit = GetWorld()->LineTraceSingleByChannel(
-		HitResult,
-		StartLocation,
-		EndLocation,
-		ECC_Visibility,
-		QueryParams
-	);
-
-	// DEBUG: Disegna una linea rossa (se non colpisce) o verde (se colpisce)
-	DrawDebugLine(GetWorld(), StartLocation, EndLocation, bHit ? FColor::Green : FColor::Red, false, 2.0f, 0, 2.0f);
-
-	if (bHit && HitResult.GetActor()->Implements<UInteractable>())
+	
+	FHitResult HitResult = TryInteract();
+	
+	if (HitResult.bBlockingHit) 
 	{
-		IInteractable::Execute_Interact(HitResult.GetActor(), this);
+		AActor* HitActor = HitResult.GetActor();
+
+		if (HitActor && HitActor->Implements<UInteractable>())
+		{
+			IInteractable::Execute_Interact(HitActor, this);
+		}
 	}
 }
 
@@ -176,38 +161,77 @@ void ATheGauntletCharacter::Punch()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "Damaging");
 
-	FVector StartLocation;
-	FRotator ViewRotation;
+	FHitResult HitResult = TryInteract();
 
-	// Ottiene la posizione e rotazione della camera/occhi del giocatore
-	GetController()->GetPlayerViewPoint(StartLocation, ViewRotation);
-
-	// Calcola il punto finale moltiplicando il vettore "avanti" per la distanza
-	FVector EndLocation = StartLocation + (ViewRotation.Vector() * interactionRange);
-
-	// 2. Setup parametri di collisione
-	FHitResult HitResult;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this); // Ignora il giocatore stesso nel trace
-
-	// 3. Esegui il Line Trace
-	// ECC_Visibility è il canale standard per oggetti visibili. 
-	// Puoi usarne uno custom se necessario.
-	bool bHit = GetWorld()->LineTraceSingleByChannel(
-		HitResult,
-		StartLocation,
-		EndLocation,
-		ECC_Visibility,
-		QueryParams
-	);
-
-	// DEBUG: Disegna una linea rossa (se non colpisce) o verde (se colpisce)
-	DrawDebugLine(GetWorld(), StartLocation, EndLocation, bHit ? FColor::Green : FColor::Red, false, 2.0f, 0, 2.0f);
-
-	if (bHit && HitResult.GetActor()->Implements<UDamageable>())
+	if (HitResult.bBlockingHit) 
 	{
-		IDamageable::Execute_TakeDamage(HitResult.GetActor(), damage);
+		AActor* HitActor = HitResult.GetActor();
+
+		if (HitActor)
+		{
+			// Cerchiamo se l'attore colpito ha il componente Health
+			// FindComponentByClass scorre i componenti dell'attore e restituisce il primo che trova
+			UHealthComponent* TargetHealthComp = HitActor->FindComponentByClass<UHealthComponent>();
+
+			if (TargetHealthComp)
+			{
+				// Se esiste, chiamiamo la funzione pubblica del componente
+				TargetHealthComp->HandleTakeDamage(damage);
+			}
+		}
 	}
 }
 
+FHitResult ATheGauntletCharacter::TryInteract()
+{
+	FVector StartLocation = GetActorLocation();
+	StartLocation.X += 50;
+	FCollisionShape MySphere = FCollisionShape::MakeSphere(interactionRange);
+
+	// --- 3. ESEGUI LO SWEEP ---
+	FHitResult HitResult;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	// Invece di LineTrace, usiamo SweepSingleByChannel
+	GetWorld()->SweepSingleByChannel(
+		HitResult,
+		StartLocation,
+		StartLocation,
+		FQuat::Identity, // Nessuna rotazione particolare per una sfera
+		ECC_Visibility,
+		MySphere, // Passiamo la forma qui
+		QueryParams
+	);
+	
+	DrawDebugSphere(GetWorld(), StartLocation, interactionRange, 12, FColor::Yellow, false, 2.0f);
+	
+	return HitResult;
+}
+
+void ATheGauntletCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "Landed");
+	
+	float FallingSpeed = -GetVelocity().Z; 
+	
+
+	//3. Verifica se abbiamo superato la soglia di sicurezza
+	if (FallingSpeed > minFallVelocity)
+	{
+		// 4. Calcolo del danno
+		// Esempio: (1500 - 1000) * 0.05 = 25 Danno
+		float ExcessSpeed = FallingSpeed - minFallVelocity;
+		float DamageToApply = ExcessSpeed * fallDmgMultiplier;
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, std::to_string(DamageToApply).c_str());
+		HealthComp->HandleTakeDamage(DamageToApply);
+	}
+}
+
+void ATheGauntletCharacter::DoOnDeath()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Emerald, "Dead Actor");
+}
 

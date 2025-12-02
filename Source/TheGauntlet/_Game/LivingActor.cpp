@@ -3,19 +3,22 @@
 
 #include "_Game/LivingActor.h"
 
+#include "HealthComponent.h"
+
 // Sets default values
 ALivingActor::ALivingActor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
+	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
+	HealthComp->OnDeath.AddDynamic(this, &ALivingActor::DoOnDeath);
 }
 
 // Called when the game starts or when spawned
 void ALivingActor::BeginPlay()
 {
 	Super::BeginPlay();
-	currentHP = maxHP;
 }
 
 // Called every frame
@@ -25,12 +28,9 @@ void ALivingActor::Tick(float DeltaTime)
 
 }
 
-void ALivingActor::TakeDamage_Implementation(float damage) 
+void ALivingActor::DoOnDeath()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, "Taking damage");
-
-	currentHP -= damage;
-
-	if (currentHP <= 0) { Destroy(); }
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Emerald, "Dead Actor");
+	Destroy();
 }
 

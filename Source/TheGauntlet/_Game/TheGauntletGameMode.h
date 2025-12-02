@@ -9,6 +9,7 @@
 /**
  *  Simple GameMode for a third person game
  */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVictory);
 UCLASS(abstract)
 class ATheGauntletGameMode : public AGameModeBase
 {
@@ -18,6 +19,12 @@ public:
 	
 	/** Constructor */
 	ATheGauntletGameMode();
+	
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnVictory OnVictoryEvent;
+	
+	UFUNCTION(BlueprintCallable, Category = "Game Flow")
+	void TriggerLevelVictory();
 };
 
 

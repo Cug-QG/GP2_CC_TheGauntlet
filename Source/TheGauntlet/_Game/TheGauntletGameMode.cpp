@@ -6,3 +6,8 @@ ATheGauntletGameMode::ATheGauntletGameMode()
 {
 	// stub
 }
+
+void ATheGauntletGameMode::TriggerLevelVictory()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Emerald, "Victory");
+}

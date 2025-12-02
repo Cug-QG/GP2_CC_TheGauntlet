@@ -4,11 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Damageable.h"
 #include "LivingActor.generated.h"
 
+class UHealthComponent;
+
 UCLASS()
-class THEGAUNTLET_API ALivingActor : public AActor, public IDamageable
+class THEGAUNTLET_API ALivingActor : public AActor
 {
 	GENERATED_BODY()
 	
@@ -23,12 +24,10 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	void TakeDamage_Implementation(float damage);
-
-	UPROPERTY(EditAnywhere, Category = "HP")
-	float maxHP;
-
-private:
-	float currentHP;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UHealthComponent* HealthComp;
+	
+	UFUNCTION(BlueprintCallable)
+	void DoOnDeath();
 };
