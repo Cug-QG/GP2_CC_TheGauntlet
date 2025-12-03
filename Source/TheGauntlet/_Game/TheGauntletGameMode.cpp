@@ -13,3 +13,11 @@ void ATheGauntletGameMode::TriggerLevelVictory()
 	
 	OnVictoryEvent.Broadcast();
 }
+
+void ATheGauntletGameMode::TriggerLost()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Emerald, "Lost");
+	
+	OnLostEvent.Broadcast();
+}
+

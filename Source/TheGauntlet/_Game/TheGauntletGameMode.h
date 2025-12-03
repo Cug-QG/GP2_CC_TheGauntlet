@@ -10,6 +10,7 @@
  *  Simple GameMode for a third person game
  */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVictory);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLost);
 UCLASS(abstract)
 class ATheGauntletGameMode : public AGameModeBase
 {
@@ -25,6 +26,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Game Flow")
 	void TriggerLevelVictory();
+	
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnLost OnLostEvent;
+	
+	UFUNCTION(BlueprintCallable, Category = "Game Flow")
+	void TriggerLost();
 };
 
 

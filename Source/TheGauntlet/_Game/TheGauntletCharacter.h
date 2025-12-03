@@ -92,7 +92,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Interact")
 	virtual void Punch();
 	
-	FHitResult TryInteract();
+	TArray<FOverlapResult> TryInteract();
 
 	UPROPERTY(EditAnywhere, Category = "Interact")
 	float interactionRange;

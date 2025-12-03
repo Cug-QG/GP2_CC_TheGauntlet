@@ -16,6 +16,8 @@
 #include "TheGauntlet.h"
 #include "Interactable.h"
 #include "HealthComponent.h"
+#include "TheGauntletGameMode.h"
+#include "Engine/OverlapResult.h"
 
 ATheGauntletCharacter::ATheGauntletCharacter()
 {
@@ -144,15 +146,17 @@ void ATheGauntletCharacter::Interact()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, "Interacting");
 	
-	FHitResult HitResult = TryInteract();
-	
-	if (HitResult.bBlockingHit) 
-	{
-		AActor* HitActor = HitResult.GetActor();
+	TArray<FOverlapResult> list = TryInteract();
 
-		if (HitActor && HitActor->Implements<UInteractable>())
+	for (const FOverlapResult& Result : list)
+	{
+		// Result.GetActor() restituisce l'attore coinvolto
+		AActor* OverlappedActor = Result.GetActor();
+
+		if (OverlappedActor && OverlappedActor->Implements<UInteractable>()) 
 		{
-			IInteractable::Execute_Interact(HitActor, this);
+			IInteractable::Execute_Interact(OverlappedActor, this);
+			break;
 		}
 	}
 }
@@ -161,52 +165,56 @@ void ATheGauntletCharacter::Punch()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "Damaging");
 
-	FHitResult HitResult = TryInteract();
+	TArray<FOverlapResult> list = TryInteract();
 
-	if (HitResult.bBlockingHit) 
+	for (const FOverlapResult& Result : list)
 	{
-		AActor* HitActor = HitResult.GetActor();
+		// Result.GetActor() restituisce l'attore coinvolto
+		AActor* OverlappedActor = Result.GetActor();
 
-		if (HitActor)
+		if (OverlappedActor) 
 		{
-			// Cerchiamo se l'attore colpito ha il componente Health
-			// FindComponentByClass scorre i componenti dell'attore e restituisce il primo che trova
-			UHealthComponent* TargetHealthComp = HitActor->FindComponentByClass<UHealthComponent>();
+			UHealthComponent* TargetHealthComp = OverlappedActor->FindComponentByClass<UHealthComponent>();
 
 			if (TargetHealthComp)
 			{
 				// Se esiste, chiamiamo la funzione pubblica del componente
 				TargetHealthComp->HandleTakeDamage(damage);
+				break; 
 			}
 		}
 	}
 }
 
-FHitResult ATheGauntletCharacter::TryInteract()
+TArray<FOverlapResult> ATheGauntletCharacter::TryInteract()
 {
 	FVector StartLocation = GetActorLocation();
-	StartLocation.X += 50;
+    
+	// Creiamo la forma della sfera
 	FCollisionShape MySphere = FCollisionShape::MakeSphere(interactionRange);
 
-	// --- 3. ESEGUI LO SWEEP ---
-	FHitResult HitResult;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);
+	// Array per contenere tutti i risultati (non esiste OverlapSingleByChannel)
+	TArray<FOverlapResult> OverlapResults;
 
-	// Invece di LineTrace, usiamo SweepSingleByChannel
-	GetWorld()->SweepSingleByChannel(
-		HitResult,
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this); // Ignora il player
+
+	// Eseguiamo l'Overlap
+	// Restituisce true se ha trovato qualcosa
+	bool bHit = GetWorld()->OverlapMultiByChannel(
+		OverlapResults,
 		StartLocation,
-		StartLocation,
-		FQuat::Identity, // Nessuna rotazione particolare per una sfera
-		ECC_Visibility,
-		MySphere, // Passiamo la forma qui
+		FQuat::Identity, // Nessuna rotazione
+		ECC_Visibility,  // Canale Visibility
+		MySphere,
 		QueryParams
 	);
-	
-	DrawDebugSphere(GetWorld(), StartLocation, interactionRange, 12, FColor::Yellow, false, 2.0f);
-	
-	return HitResult;
+
+	// DEBUG VISIVO
+	DrawDebugSphere(GetWorld(), StartLocation, interactionRange, 12, bHit ? FColor::Green : FColor::Red, false, 2.0f);
+
+	// FHitResult "finto" da restituire (per mantenere compatibilità col tuo codice esistente)
+	return OverlapResults;
 }
 
 void ATheGauntletCharacter::Landed(const FHitResult& Hit)
@@ -233,5 +241,11 @@ void ATheGauntletCharacter::Landed(const FHitResult& Hit)
 void ATheGauntletCharacter::DoOnDeath()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Emerald, "Dead Actor");
+	
+	if (ATheGauntletGameMode* GM = Cast<ATheGauntletGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		//CHIAMA LA FUNZIONE (Non il broadcast diretto)
+		GM->TriggerLost();
+	}
 }
 
