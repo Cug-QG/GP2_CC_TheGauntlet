@@ -7,6 +7,7 @@
 #include "HealthComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeath);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDamage);
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class THEGAUNTLET_API UHealthComponent : public UActorComponent
 {
@@ -29,6 +30,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	void HandleTakeDamage(float DamageAmount);
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnDeath OnDamage;
 	
 	UPROPERTY(BlueprintAssignable)
 	FOnDeath OnDeath;

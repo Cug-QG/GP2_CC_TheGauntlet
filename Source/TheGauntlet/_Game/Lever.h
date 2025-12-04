@@ -30,5 +30,17 @@ public:
 	TScriptInterface<ITGOrderReceiver> linkedObject;
 
 	void Interact_Implementation(ATheGauntletCharacter* interacter);
+	
+	UPROPERTY()
+	UStaticMeshComponent* TargetMesh;
 
+	// Materiale e Colore
+	UPROPERTY()
+	UMaterialInstanceDynamic* DynamicMat;
+
+	FLinearColor InitialColor;
+
+	FTimerHandle FlashTimerHandle;
+
+	void OnFlashEnded();
 };

@@ -30,6 +30,7 @@ void UHealthComponent::HandleTakeDamage(float DamageAmount)
 	if(CurrentHealth <= 0) return;
 
 	CurrentHealth -= DamageAmount;
+	OnDamage.Broadcast();
 	UE_LOG(LogTemp, Warning, TEXT("Salute rimanente: %f"), CurrentHealth);
 	
 	if (CurrentHealth <= 0)

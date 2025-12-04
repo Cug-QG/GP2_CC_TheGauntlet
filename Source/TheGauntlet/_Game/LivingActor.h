@@ -30,4 +30,16 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void DoOnDeath();
+	
+	UFUNCTION(BlueprintCallable)
+	void UpdateColorBasedOnHealth();
+	
+	UPROPERTY()
+	UStaticMeshComponent* TargetMesh;
+
+	// Materiale e Colore
+	UPROPERTY()
+	UMaterialInstanceDynamic* DynamicMat;
+
+	FLinearColor InitialColor;
 };
