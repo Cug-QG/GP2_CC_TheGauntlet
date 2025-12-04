@@ -5,12 +5,12 @@
 
 #include "Kismet/GameplayStatics.h"
 
-void UTGGameInstance::LoadLevel(FName LevelName)
+void UTGGameInstance::LoadLevel(TSoftObjectPtr<UWorld> level)
 {
 	// Controllo di sicurezza: il nome non deve essere vuoto
-	if (!LevelName.IsNone())
+	if (!level)
 	{
-		UGameplayStatics::OpenLevel(this, LevelName);
+		UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(),level);
 	}
 	else
 	{

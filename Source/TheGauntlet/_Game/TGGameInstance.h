@@ -14,5 +14,5 @@ class THEGAUNTLET_API UTGGameInstance : public UGameInstance
 	GENERATED_BODY()
 	
 	UFUNCTION(BlueprintCallable, Category = "Level Management")
-	void LoadLevel(FName LevelName);
+	void LoadLevel(TSoftObjectPtr<UWorld> level);
 };
